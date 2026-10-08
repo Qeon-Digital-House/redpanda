@@ -42,11 +42,11 @@ type BreadcrumbHeaderRowProps = {
 function BreadcrumbHeaderRow({ useNewSidebar, breadcrumbItems }: BreadcrumbHeaderRowProps) {
   return (
     <div className={cn('w-full border-b', useNewSidebar && 'py-4')}>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         {useNewSidebar ? (
           <>
-            <SidebarTrigger />
-            <Separator className="mr-2 h-4" orientation="vertical" />
+            <SidebarTrigger className="shrink-0" />
+            <Separator className="mr-2 h-4 shrink-0" orientation="vertical" />
           </>
         ) : null}
         {isEmbedded() ? null : (
@@ -120,8 +120,9 @@ function AppPageHeader() {
       {/* Title + actions row. Hidden for breadcrumb-only headers (e.g. the SQL
           studio, which carries its own title bar and toolbar). */}
       {!hideTitleRow && (
-        <div className="flex items-center justify-between pt-6">
-          <div className="flex flex-col gap-1">
+        // Wraps on narrow screens so the actions drop below the title instead of overflowing.
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-6">
+          <div className="flex min-w-0 flex-col gap-1">
             {backLink && (
               <RegistryButton
                 className="-ml-2 w-fit text-muted-foreground"
@@ -134,12 +135,15 @@ function AppPageHeader() {
                 variant="ghost"
               />
             )}
-            <div className="flex items-center">
+            <div className="flex min-w-0 items-center">
               {pageTitle ? (
                 <h1
                   className={cn(
-                    'mr-2 text-heading-xl',
-                    lastBreadcrumb?.options?.canBeTruncated ? 'break-spaces break-all' : 'nowrap'
+                    'mr-2 min-w-0 text-heading-xl',
+                    // Long titles (topic names, ...) wrap on phones instead of overflowing.
+                    lastBreadcrumb?.options?.canBeTruncated
+                      ? 'break-spaces break-all'
+                      : 'wrap-break-word md:whitespace-nowrap'
                   )}
                 >
                   {pageTitle}

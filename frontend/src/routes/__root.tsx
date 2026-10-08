@@ -79,7 +79,7 @@ function SelfHostedLayout() {
             past the viewport, adding a horizontal scrollbar. */}
         <SidebarInset className="min-w-0">
           {/* Centered page column; `page-expanded-*` release the gutter and cap (globals.css). */}
-          <div className="page-expanded-flush page-expanded-uncap container mx-auto flex max-w-[1500px] flex-1 flex-col px-12 transition-[max-width,padding] duration-300 ease-in-out">
+          <div className="page-expanded-flush page-expanded-uncap container mx-auto flex max-w-[1500px] flex-1 flex-col px-4 transition-[max-width,padding] duration-300 ease-in-out sm:px-6 lg:px-12">
             <AppContent />
           </div>
         </SidebarInset>

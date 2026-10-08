@@ -948,6 +948,15 @@ $easeInOutCirc: cubic-bezier(0.785, 0.135, 0.15, 0.86);
       font-size: 12px;
       line-height: normal;
     }
+
+    // Phones: let the version, date and git hash wrap instead of overflowing the viewport.
+    @media (max-width: 639px) {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.25em 1em;
+      white-space: normal;
+      text-align: center;
+    }
   }
 }
 
