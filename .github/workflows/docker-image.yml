@@ -1,0 +1,95 @@
+---
+name: Docker image
+on:
+  push:
+    branches:
+      - master
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  packages: write
+env:
+  # GHCR requires lowercase image names; github.repository must not contain
+  # uppercase characters. To publish to Docker Hub instead, set
+  # REGISTRY to docker.io, IMAGE_NAME to <org>/<repo>, and swap the login
+  # step's credentials for DOCKERHUB_USERNAME / DOCKERHUB_TOKEN secrets.
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+jobs:
+  build:
+    name: Build and publish image
+    timeout-minutes: 30
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Docker Builder
+        uses: useblacksmith/setup-docker-builder@v1
+
+      - name: Prepare build metadata
+        id: meta
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        run: |
+          echo "image=${IMAGE,,}" >> "$GITHUB_OUTPUT"
+          echo "git_sha=$(echo "$GITHUB_SHA" | cut -c 1-7)" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:main
+            ${{ steps.meta.outputs.image }}:sha-${{ steps.meta.outputs.git_sha }}
+          build-args: |
+            REACT_APP_CONSOLE_GIT_SHA=${{ steps.meta.outputs.git_sha }}
+            REACT_APP_CONSOLE_GIT_REF=${{ github.ref_name }}
+            REACT_APP_BUILD_TIMESTAMP=${{ steps.meta.outputs.timestamp }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The HTTP server only binds after the Kafka connectivity check passes,
+      # so skip it for this smoke test (see BUILD.md troubleshooting).
+      - name: Smoke test image
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}:sha-${{ steps.meta.outputs.git_sha }}
+        run: |
+          docker run -d --name console-smoke -p 8080:8080 \
+            -e KAFKA_STARTUP_ESTABLISHCONNECTIONEAGERLY=false \
+            "$IMAGE"
+          healthy=""
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/admin/health > /dev/null 2>&1; then
+              healthy=1
+              break
+            fi
+            sleep 1
+          done
+          if [ -z "$healthy" ]; then
+            echo "::error::Console did not become healthy within 30s"
+            docker logs console-smoke
+            docker rm -f console-smoke
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:8080/ | grep -q '<!DOCTYPE html>' \
+            || { echo "::error::Frontend index.html not served"; docker logs console-smoke; exit 1; }
+          docker rm -f console-smoke
+
+      - name: Push image
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+        run: |
+          docker push "$IMAGE:main"
+          docker push "$IMAGE:sha-${{ steps.meta.outputs.git_sha }}"

@@ -1,0 +1,56 @@
+# Keep the build context small. Everything the image needs is either inside
+# backend/ or frontend/ - anything else excluded here only bloats uploads and
+# invalidates layer caches.
+#
+# NOTE: backend/pkg/embed/frontend/ is intentionally NOT kept. The frontend
+# assets embedded into the Go binary are produced by the `frontend` stage of
+# the Dockerfile; stale local copies must not leak into the image.
+
+# VCS, CI, and editor tooling
+.git
+.github
+.git-hooks
+.claude
+lefthook.yml
+.toolversion
+.taskversion
+
+# Local development helper scripts and Task toolchain
+build/
+taskw
+Taskfile.yaml
+taskfiles/
+run-docker.sh
+
+# Proto tooling - generated code in backend/pkg/protogen/ and
+# frontend/src/protogen/ is committed, so the .proto sources are not needed
+# to build
+proto/
+buf.yaml
+buf.gen.backend.yaml
+buf.gen.frontend.yaml
+buf.gen.openapi.yaml
+buf.lock
+
+# Frontend artifacts and dependencies (rebuilt inside the image)
+frontend/node_modules
+frontend/build
+frontend/coverage
+frontend/.env
+frontend/.env.*
+frontend/dist
+
+# E2E test artifacts
+backend/.dockerfile.e2e.tmp
+backend/.e2e-workspace
+frontend/tests/**/playwright-report
+frontend/tests/**/test-results
+
+# Stale local copies of embedded frontend assets (see note above)
+backend/pkg/embed/frontend/
+
+# Docs and local files not used by the build.
+# Note: no global *.md/*.png excludes - files under backend/pkg/proto/embed/
+# and pkg/embed/ are go:embed'ed into the binary and must stay.
+docs/
+tool-error-display.png
