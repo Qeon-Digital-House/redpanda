@@ -57,10 +57,10 @@ docker buildx build --platform linux/amd64,linux/arm64 -t console:local .
 
 ### CI builds
 
-Every commit to `main` is built and published automatically by
+Every commit to the default branch is built and published automatically by
 [.github/workflows/docker-image.yml](.github/workflows/docker-image.yml): the image is
 built, smoke-tested (liveness probe + frontend served), then pushed to GHCR with the tags
-`main` and `sha-<short-sha>` (e.g. `ghcr.io/redpanda-data/console:sha-1a2b3c4`).
+`<branch>` and `sha-<short-sha>` (e.g. `ghcr.io/redpanda-data/console:sha-1a2b3c4`).
 
 ## Run the image
 
