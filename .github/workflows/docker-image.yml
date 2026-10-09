@@ -62,11 +62,14 @@ jobs:
 
       # The HTTP server only binds after the Kafka connectivity check passes,
       # so skip it for this smoke test (see BUILD.md troubleshooting).
+      # KAFKA_BROKERS is still required - config validation rejects an empty
+      # broker list - but the address never needs to be reachable.
       - name: Smoke test image
         env:
           IMAGE: ${{ steps.meta.outputs.image }}:sha-${{ steps.meta.outputs.git_sha }}
         run: |
           docker run -d --name console-smoke -p 8080:8080 \
+            -e KAFKA_BROKERS=127.0.0.1:9092 \
             -e KAFKA_STARTUP_ESTABLISHCONNECTIONEAGERLY=false \
             "$IMAGE"
           healthy=""

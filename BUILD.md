@@ -192,4 +192,6 @@ assets, and the build fails until step 2 is repeated.
   Kafka connectivity check passes. To start and serve the UI without a reachable broker,
   set `KAFKA_STARTUP_ESTABLISHCONNECTIONEAGERLY=false` (maps to
   `kafka.startup.establishConnectionEagerly`, see `testKafkaConnectivity` in
-  `backend/pkg/console/service.go`); API calls will still fail.
+  `backend/pkg/console/service.go`); API calls will still fail. Note that
+  `KAFKA_BROKERS` must still be set to something — config validation rejects an empty
+  broker list (`Kafka.Validate()`) — but the address does not need to be reachable.
